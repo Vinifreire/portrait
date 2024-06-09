@@ -1,0 +1,48 @@
+version: "3.7"
+
+x-shared:
+  common: &common
+    stdin_open: true
+    tty: true
+    volumes:
+      - ~/.gitconfig:/home/portraitapp/.gitconfig:ro
+      - ~/.ssh:/home/portraitapp/.ssh:ro
+      - ~/.ssh:/home/node/.ssh:ro
+      - ~/.gem:/home/portraitapp/.gem
+      - .:/portrait
+      - gems:/gems
+    networks:
+      - default
+
+services:
+  portrait-api:
+    <<: *common
+    build: .docker/portrait-api
+    ports:
+      - 3001:3000
+    environment:
+      APP_NAME: portrait-api
+      RAILS_ENV: development
+      POLYGON_ADDRESS: 'https://api.polygon.io/v2/aggs/ticker'
+      POLYGON_API_KEY: ${POLYGON_API_KEY}
+    depends_on:
+      - redis-portrait
+
+  portrait-app:
+    <<: *common
+    build: .docker/portrait-app
+    ports:
+      - 3000:3000
+
+  redis-portrait:
+    image: redis:7.0
+
+networks:
+  default:
+    ipam:
+      driver: default
+      config:
+        - subnet: 30.5.0.0/16
+
+volumes:
+  gems: {}
